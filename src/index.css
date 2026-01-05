@@ -2,95 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* iOS-inspired color system */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 0 0% 11%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* iOS Blue */
+    --primary: 211 100% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 0 0% 11%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 220 14% 96%;
+    --accent-foreground: 0 0% 11%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    /* iOS Red */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* iOS Green */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+    /* iOS Orange */
+    --warning: 32 95% 55%;
+    --warning-foreground: 0 0% 100%;
 
-    --sidebar-background: 0 0% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 211 100% 50%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --radius: 0.75rem;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* Calendar specific */
+    --calendar-today: 211 100% 95%;
+    --calendar-selected: 211 100% 50%;
+    --calendar-indicator: 211 100% 50%;
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* Priority colors */
+    --priority-high: 0 84% 60%;
+    --priority-medium: 32 95% 55%;
+    --priority-low: 211 100% 50%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* Task states */
+    --task-pending: 220 9% 46%;
+    --task-completed: 142 71% 45%;
+    --task-overdue: 0 84% 60%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+    /* Safe areas for iOS */
+    --safe-area-top: env(safe-area-inset-top);
+    --safe-area-bottom: env(safe-area-inset-bottom);
+    --safe-area-left: env(safe-area-inset-left);
+    --safe-area-right: env(safe-area-inset-right);
 
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* iOS navigation */
+    --nav-height: 3.5rem;
+    --tab-bar-height: 5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 211 100% 50%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 98%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 32 95% 55%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 0 0% 18%;
+    --input: 0 0% 18%;
+    --ring: 211 100% 50%;
+
+    --calendar-today: 211 100% 15%;
+    --calendar-selected: 211 100% 50%;
   }
 }
 
@@ -99,7 +116,85 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    padding-top: var(--safe-area-top);
+    padding-bottom: var(--safe-area-bottom);
+    padding-left: var(--safe-area-left);
+    padding-right: var(--safe-area-right);
+  }
+
+  /* iOS-style scrolling */
+  .ios-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+}
+
+@layer utilities {
+  /* Glass effect for iOS-style blur */
+  .ios-glass {
+    @apply backdrop-blur-xl bg-background/80;
+  }
+
+  /* iOS-style shadow */
+  .ios-shadow {
+    box-shadow: 0 2px 10px -3px rgba(0, 0, 0, 0.1),
+                0 4px 20px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  .ios-shadow-lg {
+    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.15),
+                0 20px 50px -20px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Task priority indicators */
+  .priority-high {
+    @apply border-l-4;
+    border-left-color: hsl(var(--priority-high));
+  }
+
+  .priority-medium {
+    @apply border-l-4;
+    border-left-color: hsl(var(--priority-medium));
+  }
+
+  .priority-low {
+    @apply border-l-4;
+    border-left-color: hsl(var(--priority-low));
+  }
+
+  /* Calendar cell animations */
+  .calendar-cell {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .calendar-cell:active {
+    transform: scale(0.95);
+  }
+
+  /* Tab bar active indicator */
+  .tab-active {
+    @apply text-primary;
+  }
+
+  /* iOS-style list item */
+  .ios-list-item {
+    @apply relative bg-card rounded-xl px-4 py-3 transition-all duration-150;
+  }
+
+  .ios-list-item:active {
+    @apply bg-secondary;
+  }
+
+  /* Checkbox completed animation */
+  .task-completed {
+    @apply line-through text-muted-foreground;
   }
 }
