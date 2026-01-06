@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronDown, Plus, Trash2, Bell } from 'lucide-react';
+import { X, ChevronDown, Trash2, Bell, Tag as TagIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
@@ -8,11 +8,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import type { Task, Priority, Weekday, Subtask, Reminder, RepeatRule } from '@/types/task';
+import { SubtaskList } from '@/components/tasks/SubtaskList';
+import { TagManager } from '@/components/tasks/TagManager';
+import type { Task, Priority, Weekday, Subtask, Reminder, RepeatRule, Tag } from '@/types/task';
 
 interface TaskFormProps {
   task?: Task | null;
   initialDate?: Date;
+  tags?: Tag[];
+  onCreateTag?: (tag: Tag) => void;
   onSubmit: (task: Partial<Task>) => void;
   onCancel: () => void;
   onDelete?: () => void;
@@ -42,7 +46,7 @@ const REMINDER_OPTIONS = [
   { value: 1440, label: '1 day before' },
 ];
 
-export function TaskForm({ task, initialDate, onSubmit, onCancel, onDelete }: TaskFormProps) {
+export function TaskForm({ task, initialDate, tags = [], onCreateTag, onSubmit, onCancel, onDelete }: TaskFormProps) {
   const isEditing = !!task;
   
   const [title, setTitle] = useState(task?.title || '');
@@ -50,6 +54,7 @@ export function TaskForm({ task, initialDate, onSubmit, onCancel, onDelete }: Ta
   const [allDay, setAllDay] = useState(task?.allDay || false);
   const [priority, setPriority] = useState<Priority>(task?.priority || 'none');
   const [scheduleType, setScheduleType] = useState<'one-time' | 'repeating'>(task?.scheduleType || 'one-time');
+  const [selectedTags, setSelectedTags] = useState<string[]>(task?.tags || []);
   
   // Date/Time
   const defaultDate = initialDate || new Date();
@@ -74,7 +79,6 @@ export function TaskForm({ task, initialDate, onSubmit, onCancel, onDelete }: Ta
 
   // Subtasks
   const [subtasks, setSubtasks] = useState<Subtask[]>(task?.subtasks || []);
-  const [newSubtask, setNewSubtask] = useState('');
 
   // Reminders
   const [reminders, setReminders] = useState<Reminder[]>(task?.reminders || []);
@@ -82,6 +86,7 @@ export function TaskForm({ task, initialDate, onSubmit, onCancel, onDelete }: Ta
   // UI state
   const [showPriority, setShowPriority] = useState(false);
   const [showReminders, setShowReminders] = useState(false);
+  const [showTags, setShowTags] = useState(false);
 
   const toggleWeekday = (day: Weekday) => {
     setWeekdays(prev => 
@@ -89,20 +94,6 @@ export function TaskForm({ task, initialDate, onSubmit, onCancel, onDelete }: Ta
         ? prev.filter(d => d !== day)
         : [...prev, day]
     );
-  };
-
-  const addSubtask = () => {
-    if (!newSubtask.trim()) return;
-    setSubtasks(prev => [...prev, {
-      id: uuidv4(),
-      title: newSubtask.trim(),
-      completed: false,
-    }]);
-    setNewSubtask('');
-  };
-
-  const removeSubtask = (id: string) => {
-    setSubtasks(prev => prev.filter(s => s.id !== id));
   };
 
   const toggleReminder = (offsetMinutes: number) => {
@@ -144,6 +135,7 @@ export function TaskForm({ task, initialDate, onSubmit, onCancel, onDelete }: Ta
       notes: notes.trim(),
       allDay,
       priority,
+      tags: selectedTags,
       scheduleType,
       dueDateTime: scheduleType === 'one-time' ? dueDateTime : null,
       repeatRule,
@@ -156,6 +148,8 @@ export function TaskForm({ task, initialDate, onSubmit, onCancel, onDelete }: Ta
     scheduleType === 'one-time' || 
     (weekdays.length > 0 && endDate)
   );
+
+  const selectedTagCount = selectedTags.length;
 
   return (
     <motion.div
@@ -331,6 +325,45 @@ export function TaskForm({ task, initialDate, onSubmit, onCancel, onDelete }: Ta
           </AnimatePresence>
         </div>
 
+        {/* Tags */}
+        <div className="bg-card rounded-xl ios-shadow overflow-hidden">
+          <button
+            onClick={() => setShowTags(!showTags)}
+            className="w-full px-4 py-3 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <TagIcon className="w-5 h-5" />
+              <span className="font-medium">Tags</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {selectedTagCount > 0 && (
+                <span className="text-sm text-primary">{selectedTagCount} selected</span>
+              )}
+              <ChevronDown className={cn("w-5 h-5 transition-transform", showTags && "rotate-180")} />
+            </div>
+          </button>
+          
+          <AnimatePresence>
+            {showTags && (
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: 'auto' }}
+                exit={{ height: 0 }}
+                className="overflow-hidden border-t border-border"
+              >
+                <div className="p-4">
+                  <TagManager
+                    tags={tags}
+                    selectedTags={selectedTags}
+                    onTagsChange={setSelectedTags}
+                    onCreateTag={onCreateTag || (() => {})}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
         {/* Reminders */}
         <div className="bg-card rounded-xl ios-shadow overflow-hidden">
           <button
@@ -392,31 +425,10 @@ export function TaskForm({ task, initialDate, onSubmit, onCancel, onDelete }: Ta
         {/* Subtasks */}
         <div className="bg-card rounded-xl p-4 ios-shadow space-y-3">
           <h3 className="font-medium">Subtasks</h3>
-          
-          <div className="space-y-2">
-            {subtasks.map((subtask) => (
-              <div key={subtask.id} className="flex items-center gap-2">
-                <div className="w-5 h-5 rounded-full border-2 border-muted-foreground/40" />
-                <span className="flex-1">{subtask.title}</span>
-                <button onClick={() => removeSubtask(subtask.id)}>
-                  <Trash2 className="w-4 h-4 text-destructive" />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Input
-              placeholder="Add subtask..."
-              value={newSubtask}
-              onChange={(e) => setNewSubtask(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addSubtask()}
-              className="flex-1"
-            />
-            <Button size="icon" variant="ghost" onClick={addSubtask}>
-              <Plus className="w-5 h-5" />
-            </Button>
-          </div>
+          <SubtaskList
+            subtasks={subtasks}
+            onChange={setSubtasks}
+          />
         </div>
 
         {/* Delete button for editing */}
