@@ -1,24 +1,33 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, Circle, Filter } from 'lucide-react';
+import { CheckCircle2, Circle, Filter, Inbox } from 'lucide-react';
 import { format, isToday, isTomorrow, isPast, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTasks } from '@/hooks/useTasks';
-import { TaskListItem } from '@/components/tasks/TaskListItem';
+import { useTags } from '@/hooks/useTags';
+import { SwipeableTaskItem } from '@/components/tasks/SwipeableTaskItem';
 import { TaskForm } from '@/components/tasks/TaskForm';
-import type { Task, Occurrence } from '@/types/task';
+import { SearchBar } from '@/components/tasks/SearchBar';
+import type { Task, Occurrence, Priority } from '@/types/task';
 
 type FilterType = 'all' | 'today' | 'upcoming' | 'overdue' | 'completed';
 
 export function TasksScreen() {
   const { tasks, occurrences, completeOccurrence, updateTask, deleteTask } = useTasks();
+  const { tags, createTag } = useTags();
   const [filter, setFilter] = useState<FilterType>('all');
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+  
+  // Search and filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [priorityFilters, setPriorityFilters] = useState<Priority[]>([]);
+  const [selectedTagFilters, setSelectedTagFilters] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
 
   const filteredItems = useMemo(() => {
     const today = startOfDay(new Date());
     
-    const items = occurrences
+    let items = occurrences
       .map(occ => {
         const task = tasks.find(t => t.id === occ.taskId);
         return task ? { occurrence: occ, task } : null;
@@ -26,27 +35,56 @@ export function TasksScreen() {
       .filter((item): item is { occurrence: Occurrence; task: Task } => item !== null)
       .filter(item => item.task.status === 'active' || filter === 'completed');
 
+    // Apply status filter
     switch (filter) {
       case 'today':
-        return items.filter(({ occurrence }) => 
+        items = items.filter(({ occurrence }) => 
           isToday(new Date(occurrence.occurrenceDateTime)) && occurrence.state !== 'completed'
         );
+        break;
       case 'upcoming':
-        return items.filter(({ occurrence }) => {
+        items = items.filter(({ occurrence }) => {
           const date = new Date(occurrence.occurrenceDateTime);
           return date > today && occurrence.state !== 'completed';
         });
+        break;
       case 'overdue':
-        return items.filter(({ occurrence }) => {
+        items = items.filter(({ occurrence }) => {
           const date = new Date(occurrence.occurrenceDateTime);
           return isPast(date) && !isToday(date) && occurrence.state !== 'completed';
         });
+        break;
       case 'completed':
-        return items.filter(({ occurrence }) => occurrence.state === 'completed');
+        items = items.filter(({ occurrence }) => occurrence.state === 'completed');
+        break;
       default:
-        return items.filter(({ occurrence }) => occurrence.state !== 'completed');
+        items = items.filter(({ occurrence }) => occurrence.state !== 'completed');
     }
-  }, [tasks, occurrences, filter]);
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      items = items.filter(({ task }) => 
+        task.title.toLowerCase().includes(query) ||
+        task.notes.toLowerCase().includes(query) ||
+        task.subtasks.some(s => s.title.toLowerCase().includes(query))
+      );
+    }
+
+    // Apply priority filter
+    if (priorityFilters.length > 0) {
+      items = items.filter(({ task }) => priorityFilters.includes(task.priority));
+    }
+
+    // Apply tag filter
+    if (selectedTagFilters.length > 0) {
+      items = items.filter(({ task }) => 
+        selectedTagFilters.some(tagId => task.tags.includes(tagId))
+      );
+    }
+
+    return items;
+  }, [tasks, occurrences, filter, searchQuery, priorityFilters, selectedTagFilters]);
 
   // Group by date
   const groupedItems = useMemo(() => {
@@ -95,11 +133,28 @@ export function TasksScreen() {
     setEditingTask(null);
   };
 
+  const handleDeleteFromSwipe = async (taskId: string) => {
+    await deleteTask(taskId);
+  };
+
   return (
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <div className="px-4 py-3 border-b border-border bg-card">
-        <h1 className="text-2xl font-bold mb-4">Tasks</h1>
+      <div className="px-4 py-3 border-b border-border bg-card space-y-3">
+        <h1 className="text-2xl font-bold">Tasks</h1>
+        
+        {/* Search bar */}
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          priorities={priorityFilters}
+          onPrioritiesChange={setPriorityFilters}
+          tags={tags}
+          selectedTags={selectedTagFilters}
+          onSelectedTagsChange={setSelectedTagFilters}
+          showFilters={showFilters}
+          onToggleFilters={() => setShowFilters(!showFilters)}
+        />
         
         {/* Filter chips */}
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 no-scrollbar">
@@ -126,13 +181,23 @@ export function TasksScreen() {
       <div className="flex-1 overflow-y-auto ios-scroll p-4">
         {groupedItems.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center justify-center py-20 text-muted-foreground"
           >
-            <Filter className="w-12 h-12 mb-4 opacity-50" />
-            <p className="text-lg">No tasks found</p>
-            <p className="text-sm">Try changing your filter</p>
+            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+              {searchQuery || priorityFilters.length > 0 || selectedTagFilters.length > 0 ? (
+                <Filter className="w-8 h-8 opacity-50" />
+              ) : (
+                <Inbox className="w-8 h-8 opacity-50" />
+              )}
+            </div>
+            <p className="text-lg font-medium">
+              {searchQuery ? 'No matching tasks' : 'No tasks found'}
+            </p>
+            <p className="text-sm">
+              {searchQuery ? 'Try a different search' : 'Try changing your filter'}
+            </p>
           </motion.div>
         ) : (
           <div className="space-y-6">
@@ -149,11 +214,13 @@ export function TasksScreen() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.03 }}
                     >
-                      <TaskListItem
+                      <SwipeableTaskItem
                         task={task}
                         occurrence={occurrence}
+                        tags={tags}
                         onClick={() => setEditingTask(task)}
                         onComplete={() => completeOccurrence(occurrence.id)}
+                        onDelete={() => handleDeleteFromSwipe(task.id)}
                       />
                     </motion.div>
                   ))}
@@ -169,6 +236,8 @@ export function TasksScreen() {
         {editingTask && (
           <TaskForm
             task={editingTask}
+            tags={tags}
+            onCreateTag={createTag}
             onSubmit={handleUpdateTask}
             onCancel={() => setEditingTask(null)}
             onDelete={handleDeleteTask}
